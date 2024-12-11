@@ -466,20 +466,16 @@ static bool find_input(const std::string& path, const char* input_prefix, std::s
 {
     auto files = ls(path.c_str(), input_prefix, LS_FILES);
     for (auto& file : files) {
-        if (!ends_with(file, "_label"))
+        if (!starts_with(file, input_prefix))
             continue;
 
-        auto label = read_line(path + "/" + file);
+        input = path + "/" + file;
+        auto label = read_line(input);
         if (label != name)
             continue;
 
-        auto uscore = file.find_first_of("_");
-        if (uscore != std::string::npos) {
-            file.erase(uscore, std::string::npos);
-            input = path + "/" + file + "_input";
-            //9 characters should not overflow the 32-bit int
-            return std::stoi(read_line(input).substr(0, 9)) > 0;
-        }
+        //9 characters should not overflow the 32-bit int
+        return std::stoi(read_line(input).substr(0, 9)) > 0;
     }
     return false;
 }
@@ -506,40 +502,15 @@ bool CPUStats::GetCpuFile() {
         return true;
 
     std::string name, path, input;
-    std::string hwmon = "/sys/class/hwmon/";
+    std::string hwmon = "/sys/class/thermal/";
 
     auto dirs = ls(hwmon.c_str());
     for (auto& dir : dirs) {
         path = hwmon + dir;
-        name = read_line(path + "/name");
+        name = read_line(path + "/type");
         SPDLOG_DEBUG("hwmon: sensor name: {}", name);
 
-        if (name == "coretemp") {
-            find_input(path, "temp", input, "Package id 0");
-            break;
-        }
-        else if ((name == "zenpower" || name == "k10temp")) {
-            if (!find_input(path, "temp", input, "Tdie"))
-                find_input(path, "temp", input, "Tctl");
-            break;
-        } else if (name == "atk0110") {
-            find_input(path, "temp", input, "CPU Temperature");
-            break;
-        } else if (name == "it8603") {
-            find_input(path, "temp", input, "temp1");
-            break;
-        } else if (starts_with(name, "nct")) {
-            // Only break if nct module has TSI0_TEMP node
-            if (find_input(path, "temp", input, "TSI0_TEMP"))
-                break;
-
-        } else if (name == "asusec") {
-            // Only break if module has CPU node
-            if (find_input(path, "temp", input, "CPU"))
-                break;
-        } else {
-            path.clear();
-        }
+        find_input(path, "temp", input, "Package id 0");
     }
     if (path.empty() || (!file_exists(input) && !find_fallback_input(path, "temp", input))) {
         SPDLOG_ERROR("Could not find cpu temp sensor location");
