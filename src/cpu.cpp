@@ -600,7 +600,7 @@ bool CPUStats::InitCpuPowerData() {
         return true;
 
     std::string name, path;
-    std::string hwmon = "/sys/class/hwmon/";
+    std::string hwmon = "/sys/class/thermal/";
     bool intel = false;
 
     CPUPowerData* cpuPowerData = nullptr;
@@ -608,7 +608,7 @@ bool CPUStats::InitCpuPowerData() {
     auto dirs = ls(hwmon.c_str());
     for (auto& dir : dirs) {
         path = hwmon + dir;
-        name = read_line(path + "/name");
+        name = read_line(path + "/type");
         SPDLOG_DEBUG("hwmon: sensor name: {}", name);
 
         if (name == "k10temp") {
