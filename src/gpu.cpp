@@ -21,7 +21,7 @@ namespace fs = ghc::filesystem;
 GPUS::GPUS(overlay_params* params) : params(params) {
     std::vector<std::string> gpu_entries;
 
-    for (const auto& entry : fs::directory_iterator("/sys/class/drm")) {
+    for (const auto& entry : fs::directory_iterator("/sys/class/thermal")) {
         if (entry.is_directory()) {
             std::string node_name = entry.path().filename().string();
 
@@ -45,7 +45,7 @@ GPUS::GPUS(overlay_params* params) : params(params) {
 
     // Now process the sorted GPU entries
     for (const auto& node_name : gpu_entries) {
-        std::string path = "/sys/class/drm/" + node_name;
+        std::string path = "/sys/class/thermal/" + node_name;
         std::string device_address = get_pci_device_address(path);  // Store the result
         const char* pci_dev = device_address.c_str();
 
